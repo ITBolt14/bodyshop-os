@@ -65,8 +65,8 @@ export function Login() {
     setLoading(false)
 
     if (error) {
-      const newAttempt = attempts + 1
-      setAttempts(newAttempt)
+      const newAttempts = attempts + 1
+      setAttempts(newAttempts)
       
       if (newAttempts >= MAX_ATTEMPTS) {
         setLocked(true)
@@ -75,7 +75,7 @@ export function Login() {
       }
 
       toast.error(
-        `Invalid email or password. ${MAX_ATTEMPTS - newAttempts} attempt${MAX_ATTEMTS - newAttepts === 1 ? '' : 's'} remaining.`
+        `Invalid email or password. ${MAX_ATTEMPTS - newAttempts} attempt${MAX_ATTEMPTS - newAttempts === 1 ? '' : 's'} remaining.`
       )
       return
     }
