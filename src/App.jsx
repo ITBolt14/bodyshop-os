@@ -1,122 +1,118 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
+// ===============================================
+// BODYSHOP OS - App Router
+// ===============================================
 
-function App() {
-  const [count, setCount] = useState(0)
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { Toaster } from 'react-hot-toast'
+import { AuthProvider } from './context/AuthContext'
+import { PortalGuard } from './layouts/PortalLayout'
 
+// Auth Pages
+import { Login } from './components/auth/Login'
+import { ResetPassword } from './components/auth/ResetPassword'
+import { UpdatePassword } from './components/auth/UpdatePassword'
+
+// Portals
+import { MainPortal } from './portals/main/MainPortal'
+import { KioskPortal } from './portals/kiosk/KioskPortal'
+import { WorkshopPortal } from './portals/workshop/WorkshopPortal'
+import { CustomerPortal } from './portals/customer/CustomerPortal'
+import { AssessorPortal } from './portals/assessor/AssessorPortal'
+
+// SECTION: Role Groupings
+const MAIN_ROLES      = ['super_admin', 'branch_admin', 'manager', 'estimator', 'receptionist']
+const WORKSHOP_ROLES  = ['super_admin', 'branch_admin', 'manager', 'technician']
+const ASSESSOR_ROLES  = ['assessor']
+const CUSTOMER_ROLES  = ['customer']
+
+export default function App() {
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+    <BrowserRouter>
+      <AuthProvider>
 
-      <div className="ticks"></div>
+        {/* Toast Notifications */}
+        <Toaster
+          position="top-right"
+          toastOptions={{
+            duration: 4000,
+            style: {
+              borderRadius: '8px',
+              fontSize: '14px',
+            },
+          }}
+        />
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
+        <Routes>
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
+          {/* SECTION: Public Routes */}
+          <Route path="/login" element={<Login />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/update-password" element={<UpdatePassword />} />
+
+          {/* SECTION: Kiosk - no auth required, locked UI */}
+          <Route path="/kiosk" element={<KioskPortal />} />
+
+          {/* SECTION: Protected Portal Routes */}
+          <Route
+            path="/main/*"
+            element={
+              <PortalGuard allowedRoles={MAIN_ROLES}>
+                <MainPortal />
+              </PortalGuard>
+            }
+          />
+
+          <Route
+            path="/workshop/*"
+            element={
+              <PortalGuard allowedRoles={WORKSHOP_ROLES}>
+                <WorkshopPortal />
+              </PortalGuard>
+            }
+          />
+
+          <Route
+            path="/assessor/*"
+            element={
+              <PortalGuard allowedRoles={ASSESSOR_ROLES}>
+                <AssessorPortal />
+              </PortalGuard>
+            }
+          />
+
+          <Route
+            path="/customer/*"
+            element={
+              <PortalGuard allowedRoles={CUSTOMER_ROLES}>
+                <CustomerPortal />
+              </PortalGuard>
+            }
+          />
+
+          {/* SECTION: Unauthorized */}
+          <Route
+            path="/unauthorized"
+            element={
+              <div className="min-h-screen flex items-center justify-center bg-gray-50">
+                <div className="card max-w-sm text-center space-y-3">
+                  <p className="text-red-600 font-bold text-lg">Access Denied</p>
+                  <p className="text-sm text-gray-500">
+                    You do not have permission to access this area.
+                  </p>
+                  <a href="/login" className="btn-secondary inline-block">
+                    Back to Login
+                  </a>
+                </div>
+              </div>
+            }
+          />
+
+          {/* SECTION: Fallback */}
+          <Route path="*" element={<Navigate to="/login" replace />} />
+
+        </Routes>
+
+      </AuthProvider>
+    </BrowserRouter>
   )
 }
-
-export default App
