@@ -7,6 +7,8 @@ import { Routes, Route, Navigate } from 'react-router-dom'
 import { MainSideBar } from './components/MainSideBar'
 import { MainTopBar } from './components/MainTopBar'
 import { Dashboard } from './pages/Dashboard'
+import { CheckInWizard } from './pages/jobs/checkin/CheckInWizard'
+import { JobList } from './pages/jobs/JobList'
 
 // SECTION: Placeholder Page Component
 const ComingSoon = ({ title }) => (
@@ -47,6 +49,8 @@ export function MainPortal() {
           <Routes>
             <Route index element={<Navigate to="dashboard" replace />} />
             <Route path="dashboard"     element={<Dashboard />} />
+            <Route path="jobs"          element={<JobList />} />
+            <Route path="jobs/checkin"  element={<CheckInWizard />} />
             <Route path="jobs/*"        element={<ComingSoon title="Job Management" />} />
             <Route path="estimating/*"  element={<ComingSoon title="Estimating & Quoting" />} />
             <Route path="insurance/*"   element={<ComingSoon title="Insurance & Approvals" />} />
@@ -61,7 +65,7 @@ export function MainPortal() {
             <Route path="*"             element={<Navigate to="dashboard" replace />} />
           </Routes>
         </main>
-        
+
       </div>
     </div>
   )

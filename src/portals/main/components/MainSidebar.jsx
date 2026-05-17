@@ -28,10 +28,10 @@ const NAV_ITEMS = [
     label:      'Jobs',
     icon:       Briefcase,
     roles:      ['super_admin','branch_admin','manager','estimator','receptionist'],
-    built:      false,
+    built:      true,
     children:   [
-     { label:   'Job List',         path: '/main/jobs',             built: false },
-     { label:   'New Check-In',     path: '/main/jobs/checkin',     built: false },
+     { label:   'Job List',         path: '/main/jobs',             built: true },
+     { label:   'New Check-In',     path: '/main/jobs/checkin',     built: true },
      { label:   'Floor Monitor',    path: '/main/jobs/monitor',     built: false },
     ],
   },
