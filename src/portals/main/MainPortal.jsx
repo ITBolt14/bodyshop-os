@@ -9,6 +9,7 @@ import { MainTopBar } from './components/MainTopBar'
 import { Dashboard } from './pages/Dashboard'
 import { CheckInWizard } from './pages/jobs/checkin/CheckInWizard'
 import { JobList } from './pages/jobs/JobList'
+import { JobDetail } from './pages/jobs/detail/JobDetail'
 
 // SECTION: Placeholder Page Component
 const ComingSoon = ({ title }) => (
@@ -51,6 +52,7 @@ export function MainPortal() {
             <Route path="dashboard"     element={<Dashboard />} />
             <Route path="jobs"          element={<JobList />} />
             <Route path="jobs/checkin"  element={<CheckInWizard />} />
+            <Route path="jobs/:id"      element={<JobDetail />} />
             <Route path="jobs/*"        element={<ComingSoon title="Job Management" />} />
             <Route path="estimating/*"  element={<ComingSoon title="Estimating & Quoting" />} />
             <Route path="insurance/*"   element={<ComingSoon title="Insurance & Approvals" />} />
