@@ -64,12 +64,7 @@ export default function App() {
 
           <Route
             path="/workshop/*"
-            element={
-              <PortalGuard allowedRoles={WORKSHOP_ROLES}>
-                <WorkshopPortal />
-              </PortalGuard>
-            }
-          />
+            element={<WorkshopPortal />} />
 
           <Route
             path="/assessor/*"

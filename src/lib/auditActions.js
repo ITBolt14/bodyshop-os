@@ -46,12 +46,19 @@ export const AUDIT_ACTIONS = {
   'assessor.completed':     { label: 'Assessment Completed',    category: 'assessor',   color: 'green'  },
 
   // SECTION: Workshop / Stage Actions
+  'stage.created':          { label: 'Stage Created',           category: 'workshop',   color: 'green'  },
   'stage.started':          { label: 'Stage Started',           category: 'workshop',   color: 'blue'   },
+  'stage.activated':        { label: 'Stage Activated',         category: 'workshop',   color: 'blue'   },
   'stage.completed':        { label: 'Stage Completed',         category: 'workshop',   color: 'green'  },
+  'stage.skipped':          { label: 'Stage Skipped',           category: 'workshop',   color: 'gray'   },
   'stage.paused':           { label: 'Stage Paused',            category: 'workshop',   color: 'yellow' },
   'stage.reassigned':       { label: 'Stage Reassigned',        category: 'workshop',   color: 'blue'   },
   'clocking.in':            { label: 'Clocked In',              category:' workshop',   color: 'green'  },
+  'clocking_on':            { label: 'Clocked On',              category: 'Workshop',   color: 'green'  },
   'clocking.out':           { label: 'Clocked Out',             category: 'workshop',   color: 'gray'   },
+  'clocking.off.manual':    { label: 'Auto Clocked Off',        category: 'workshop',   color: 'gray'   },
+  'clocking.off.eod':       { label: 'End of Day Clock-Off',    category: 'workshop',   color: 'gray'   },
+  'clocking.off.admin':     { label: 'Admin Clock-Off',         category: 'workshop',   color: 'yellow' },
 
   // SECTION: Document Actions
   'document.uploaded':      { label: 'Document Uploaded',       category: 'document',   color: 'blue'   },
@@ -100,6 +107,20 @@ export const AUDIT_ACTIONS = {
   'insurer.created':    { label: 'Insurer Added',       category: 'admin',  color: 'green'  },
   'insurer.updated':    { label: 'Insurer Updated',     category: 'admin',  color: 'blue'   },
   'settings.updated':   { label: 'Settings Updated',    category: 'admin',  color: 'blue'   },
+
+  // SECTION: Estimating Actions
+  'estimate.created':               { label: 'Estimate Created',    category: 'estimate',   color: 'green'  },
+  'estimate.updated':               { label: 'Estimate Updated',    category: 'estimate',   color: 'blue'   },
+  'estimate.submitted':             { label: 'Estimate Submitted',  category: 'estimate',   color: 'brand'  },
+  'estimate.approved':              { label: 'Estimate Approved',   category: 'estimate',   color: 'green'  },
+  'estimate.partially_approved':    { label: 'Partially Approved',  category: 'estimate',   color: 'yellow' },
+  'estimate.rejected':              { label: 'Estimate Rejected',   category: 'estimate',   color: 'red'    },
+  'estimate.revised':               { label: 'Estimate Revised',    category: 'estimate',   color: 'blue'   },
+  'estimate.line.added':            { label: 'Line Item Added',     category: 'estimate',   color: 'green'  },
+  'estimate.line.removed':          { label: 'Line Item Removed',   category: 'estimate',   color: 'red'    },
+  'rate_card.created':              { label: 'Rate Card Created',   category: 'admin',      color: 'green'  },
+  'rate_card.updated':              { label: 'Rate Card Updated',   category: 'admin',      color: 'blue'   },
+  
 }
 
 // SECTION: Category Display Config
@@ -117,6 +138,7 @@ export const AUDIT_CATEGORIES = {
   crm:          { label: 'CRM',             color: 'pink'   },
   auth:         { label: 'Users & Auth',    color: 'gray'   },
   admin:        { label: 'Admin',           color: 'red'    },
+  estimate:     { label: 'Estimating',      color: 'blue'   },
 }
 
 // SECTION: Color Map

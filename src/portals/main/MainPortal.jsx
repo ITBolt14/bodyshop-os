@@ -10,6 +10,13 @@ import { Dashboard } from './pages/Dashboard'
 import { CheckInWizard } from './pages/jobs/checkin/CheckInWizard'
 import { JobList } from './pages/jobs/JobList'
 import { JobDetail } from './pages/jobs/detail/JobDetail'
+import { EstimatingList } from './pages/estimating/EstimatingList'
+import { QuoteBuilder } from './pages/estimating/QuoteBuilder'
+import { RateCards } from './pages/estimating/RateCards'
+import { QRSticker } from './pages/jobs/QRSticker'
+import { FloorMonitor } from './pages/floormonitor/FloorMonitor'
+import { TabStages } from './pages/jobs/detail/TabStages'
+import { StageTemplates } from './pages/admin/StageTemplates'
 
 // SECTION: Placeholder Page Component
 const ComingSoon = ({ title }) => (
@@ -49,22 +56,28 @@ export function MainPortal() {
         <main className="flex-1 overflow-y-auto p-6">
           <Routes>
             <Route index element={<Navigate to="dashboard" replace />} />
-            <Route path="dashboard"     element={<Dashboard />} />
-            <Route path="jobs"          element={<JobList />} />
-            <Route path="jobs/checkin"  element={<CheckInWizard />} />
-            <Route path="jobs/:id"      element={<JobDetail />} />
-            <Route path="jobs/*"        element={<ComingSoon title="Job Management" />} />
-            <Route path="estimating/*"  element={<ComingSoon title="Estimating & Quoting" />} />
-            <Route path="insurance/*"   element={<ComingSoon title="Insurance & Approvals" />} />
-            <Route path="parts/*"       element={<ComingSoon title="Parts & Inventory" />} />
-            <Route path="financials/*"  element={<ComingSoon title="Financials & Accounting" />} />
-            <Route path="hr/*"          element={<ComingSoon title="HR & Payroll" />} />
-            <Route path="crm/*"         element={<ComingSoon title="Cutomer CRM" />} />
-            <Route path="reports/*"     element={<ComingSoon title="Reports & Analytics" />} />
-            <Route path="documents/*"   element={<ComingSoon title="Document Management" />} />
-            <Route path="workshop/*"    element={<ComingSoon title="Workshop" />} />
-            <Route path="admin/*"       element={<ComingSoon title="System Administrator" />} />
-            <Route path="*"             element={<Navigate to="dashboard" replace />} />
+            <Route path="dashboard"             element={<Dashboard />} />
+            <Route path="jobs"                  element={<JobList />} />
+            <Route path="jobs/checkin"          element={<CheckInWizard />} />
+            <Route path="jobs/monitor"          element={<FloorMonitor />} />
+            <Route path="jobs/:id/sticker"      element={<QRSticker />} />
+            <Route path="jobs/:id"              element={<JobDetail />} />
+            <Route path="jobs/*"                element={<ComingSoon title="Job Management" />} />
+            <Route path="estimating"            element={<EstimatingList />} />
+            <Route path="estimating/:jobId"     element={<QuoteBuilder />} />
+            <Route path="estimating/rate-cards" element={<RateCards />} />
+            <Route path="estimating/*"          element={<ComingSoon title="Estimating" />} />
+            <Route path="insurance/*"           element={<ComingSoon title="Insurance & Approvals" />} />
+            <Route path="parts/*"               element={<ComingSoon title="Parts & Inventory" />} />
+            <Route path="financials/*"          element={<ComingSoon title="Financials & Accounting" />} />
+            <Route path="hr/*"                  element={<ComingSoon title="HR & Payroll" />} />
+            <Route path="crm/*"                 element={<ComingSoon title="Cutomer CRM" />} />
+            <Route path="reports/*"             element={<ComingSoon title="Reports & Analytics" />} />
+            <Route path="documents/*"           element={<ComingSoon title="Document Management" />} />
+            <Route path="workshop/*"            element={<FloorMonitor />} />
+            <Route path="admin/stages"          element={<StageTemplates />} />
+            <Route path="admin/*"               element={<ComingSoon title="System Administrator" />} />
+            <Route path="*"                     element={<Navigate to="dashboard" replace />} />
           </Routes>
         </main>
 

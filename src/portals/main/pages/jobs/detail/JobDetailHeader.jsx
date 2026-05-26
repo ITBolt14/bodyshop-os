@@ -11,6 +11,7 @@ import { supabase } from '../../../../../lib/supabase'
 import { useAuth } from '../../../../../hooks/useAuth'
 import { useBranch } from '../../../../../hooks/useBranch'
 import { toast } from 'react-hot-toast'
+import { QrCode } from 'lucide-react'
 
 // SECTION: Constants
 const STATUS_STYLES = {
@@ -151,6 +152,13 @@ export function JobDetailHeader({
 
             {/* Status Dropdown */}
             <div className="relative">
+              {/* QR Sticker Button */}
+              <button
+                onClick={() => navigate(`/main/jobs/${job.id}/sticker`)}
+                className="btn-secondary flex items-center gap-2 py-2 text-sm"
+              >
+                <QrCode size={14} /> Print QR Sticker
+              </button>
               <button
                 onClick={() => setStatusOpen(prev => !prev)}
                 disabled={changingStatus || editMode}

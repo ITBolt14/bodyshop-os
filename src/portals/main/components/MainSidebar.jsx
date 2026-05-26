@@ -32,7 +32,7 @@ const NAV_ITEMS = [
     children:   [
      { label:   'Job List',         path: '/main/jobs',             built: true },
      { label:   'New Check-In',     path: '/main/jobs/checkin',     built: true },
-     { label:   'Floor Monitor',    path: '/main/jobs/monitor',     built: false },
+     { label:   'Floor Monitor',    path: '/main/jobs/monitor',     built: true },
     ],
   },
   {
@@ -40,11 +40,11 @@ const NAV_ITEMS = [
     label:      'Estimating',
     icon:       FileText,
     roles:      ['super_admin','branch_admin','manager','estimator'],
-    built:      false,
+    built:      true,
     children:   [
-      { label:  'Quotes',           path: '/main/estimating/quotes',    built: false },
-      { label:  'New Quote',        path: '/main/estimating/new',       build: false },
-      { label:  'Audatex Import',   path: '/main/estimating/audatex',   build: false },
+      { label:  'Quotes',           path: '/main/estimating',             built: true },
+      { label:  'Rate Cards',       path: '/main/estimating/rate-cards',  built: true },
+      { label:  'Audatex Import',   path: '/main/estimating/audatex',     built: false },
     ],
   },
   {
@@ -136,10 +136,10 @@ const NAV_ITEMS = [
     label:      'Workshop',
     icon:       Wrench,
     roles:      ['super_admin','branch_admin','manager','technician'],
-    built:      false,
+    built:      true,
     children:   [
       { label:  'Clocking',         path: '/main/workshop/clocking',    built: false },
-      { label:  'Stage Overview',   path: '/main/workshop/stages',      built: false },
+      { label:  'Stage Overview',   path: '/main/workshop/monitor',      built: true },
     ],
   },
   {
@@ -147,13 +147,14 @@ const NAV_ITEMS = [
     label:      'Admin',
     icon:       Settings,
     roles:      ['super_admin','branch_admin'],
-    built:      false,
+    built:      true,
     children:   [
-      { label:  'Branches',     path: '/main/admin/branches',       built: false },
-      { label:  'Users',        path: '/main/admin/users',          built: false },
-      { label:  'Roles',        path: '/main/admin/roles',          built: false },
-      { label:  'Integrations', path: '/main/admin/integrations',   built: false },
-      { label:  'Audit Log',    path: '/main/admin/audit',          built: false },
+      { label:  'Branches',         path: '/main/admin/branches',       built: false  },
+      { label:  'Users',            path: '/main/admin/users',          built: false  },
+      { label:  'Stage Templates',  path: '/main/admin/stages',         built: true   },
+      { label:  'Roles',            path: '/main/admin/roles',          built: false  },
+      { label:  'Integrations',     path: '/main/admin/integrations',   built: false  },
+      { label:  'Audit Log',        path: '/main/admin/audit',          built: false  },
     ],
   },
 ]
