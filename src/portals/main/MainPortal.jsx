@@ -64,8 +64,8 @@ export function MainPortal() {
             <Route path="jobs/:id"              element={<JobDetail />} />
             <Route path="jobs/*"                element={<ComingSoon title="Job Management" />} />
             <Route path="estimating"            element={<EstimatingList />} />
-            <Route path="estimating/:jobId"     element={<QuoteBuilder />} />
             <Route path="estimating/rate-cards" element={<RateCards />} />
+            <Route path="estimating/:jobId"     element={<QuoteBuilder />} />
             <Route path="estimating/*"          element={<ComingSoon title="Estimating" />} />
             <Route path="insurance/*"           element={<ComingSoon title="Insurance & Approvals" />} />
             <Route path="parts/*"               element={<ComingSoon title="Parts & Inventory" />} />

@@ -1,6 +1,8 @@
-// ===============================================
-// BODYSHOP OS - Job Detail Tab: Stages
-// ===============================================
+// =============================================
+// BODYSHOP OS — Job Detail: Stages Tab
+// Foreman can complete Final QC from here
+// Final QC completion triggers Ready for Collection
+// =============================================
 
 import { useState, useEffect } from 'react'
 import { supabase } from '../../../../../lib/supabase'
@@ -9,50 +11,50 @@ import { useBranch } from '../../../../../hooks/useBranch'
 import { toast } from 'react-hot-toast'
 import {
   CheckCircle, Clock, Circle, SkipForward,
-  ChevronRight, User, RefreshCw
+  ChevronRight, User, RefreshCw, Lock,
+  ShieldCheck,
 } from 'lucide-react'
 
-// SECTION: Status Config
+// SECTION: Status config
 const STATUS_CONFIG = {
-  pending:  { label: 'Pending',   icon: Circle,       color: 'text-gray-400',   bg: 'bg-gray-100'   },
-  active:   { label: 'Active',    icon: Clock,        color: 'text-blue-600',   bg: 'bg-blue-100'   },
-  complete: { label: 'Complete',  icon: CheckCircle,  color: 'text-green-600',  bg: 'bg-green-100'  },
-  skipped:  { label: 'Skipped',   icon: SkipForward,  color: 'text-gray-400',   bg: 'bg-gray-50'    },
+  pending:  { label: 'Pending',  icon: Circle,      color: 'text-gray-400',  bg: 'bg-gray-100'  },
+  active:   { label: 'Active',   icon: Clock,       color: 'text-blue-600',  bg: 'bg-blue-100'  },
+  complete: { label: 'Complete', icon: CheckCircle, color: 'text-green-600', bg: 'bg-green-100' },
+  skipped:  { label: 'Skipped',  icon: SkipForward, color: 'text-gray-400',  bg: 'bg-gray-50'   },
 }
 
-// SECTION: Format duration
-const fmtDuration = (minutes) => {
-  if (!minutes) return null
-  const h = Math.floor(minutes / 60)
-  const m = minutes % 60
-  if (h === 0) return `$[m}m`
-  return `${h}h ${m}m`
+// SECTION: Format helpers
+const fmtDuration = (mins) => {
+  if (!mins) return null
+  const h = Math.floor(mins / 60)
+  const m = mins % 60
+  if (h === 0) return `${m}m`
+  return m > 0 ? `${h}h ${m}m` : `${h}h`
 }
 
-// SECTION: Format date
 const fmtDate = (d) => d
   ? new Date(d).toLocaleString('en-ZA', {
       day: '2-digit', month: 'short',
       hour: '2-digit', minute: '2-digit',
     })
-  : '-'
+  : '—'
 
 export function TabStages({ jobId, jobStatus }) {
 
   // SECTION: State
-  const [stages,    setStages]      = useState([])
-  const [clocking,  setClocking]    = useState([])
-  const [loading,   setLoading]     = useState(true)
-  const [acting,    setActing]      = useState(null)
+  const [stages,   setStages]   = useState([])
+  const [clocking, setClocking] = useState([])
+  const [loading,  setLoading]  = useState(true)
+  const [acting,   setActing]   = useState(null)
 
   const { profile }  = useAuth()
   const { branchId } = useBranch()
 
-  // SECTION: Fetch stages and clocking data
+  // SECTION: Fetch stages and clocking history
   const fetchStages = async () => {
     setLoading(true)
 
-    const [{ data: stagesData }, { data: clockData}] = await Promise.all([
+    const [{ data: stagesData }, { data: clockData }] = await Promise.all([
       supabase
         .from('job_stages')
         .select('*')
@@ -72,7 +74,52 @@ export function TabStages({ jobId, jobStatus }) {
 
   useEffect(() => { if (jobId) fetchStages() }, [jobId])
 
-  // SECTION: Activate a stage - mark as active
+  // SECTION: Manually complete a stage (foreman/manager action)
+  const handleComplete = async (stage) => {
+    setActing(stage.id)
+
+    const now     = new Date().toISOString()
+    const started = stage.started_at
+      ? new Date(stage.started_at)
+      : new Date()
+    const mins    = Math.round((new Date() - started) / 60000)
+
+    const { error } = await supabase
+      .from('job_stages')
+      .update({
+        status:           'complete',
+        completed_at:     now,
+        duration_minutes: mins,
+      })
+      .eq('id', stage.id)
+
+    if (error) {
+      toast.error('Failed to complete stage')
+      setActing(null)
+      return
+    }
+
+    // If this is the Final QC (second to last stage),
+    // the DB trigger handles moving job to ready_for_collection
+    await supabase.from('audit_log').insert({
+      branch_id:  branchId,
+      user_id:    profile.id,
+      portal:     'main',
+      action:     'stage.completed',
+      table_name: 'job_stages',
+      record_id:  stage.id,
+      new_value:  {
+        stage:            stage.name,
+        duration_minutes: mins,
+      },
+    })
+
+    toast.success(`${stage.name} marked complete`)
+    setActing(null)
+    fetchStages()
+  }
+
+  // SECTION: Manually activate a stage
   const handleActivate = async (stage) => {
     setActing(stage.id)
 
@@ -91,54 +138,16 @@ export function TabStages({ jobId, jobStatus }) {
     }
 
     await supabase.from('audit_log').insert({
-      branch_id:    branchId,
-      user_id:      profile.id,
-      portal:       'main',
-      action:       'stage.activated',
-      table_name:   'job_stages',
-      record_id:    stage.id,
-      new_value:    { stage: stage.name, status: 'active' },
+      branch_id:  branchId,
+      user_id:    profile.id,
+      portal:     'main',
+      action:     'stage.activated',
+      table_name: 'job_stages',
+      record_id:  stage.id,
+      new_value:  { stage: stage.name },
     })
 
     toast.success(`${stage.name} activated`)
-    setActing(null)
-    fetchStages()
-  }
-
-  // SECTION: Complete a stage
-  const handleComplete = async (stage) => {
-    setActing(stage.id)
-
-    const now         = new Date().toISOString()
-    const started     = stage.started_at ? new Date(stage.started_at) : new Date()
-    const mins        = Math.round((new Date() - started) / 60000)
-
-    const { error } = await supabase
-      .from('job_stages')
-      .update({
-        status:           'complete',
-        completed_at:     now,
-        duration_minutes: mins,
-      })
-      .eq('id', stage.id)
-
-    if (error) {
-      toast.error('Failed to complete stage')
-      setActing(null)
-      return
-    }
-
-    await supabase.from('audit_log').insert({
-      branch_id:    branchId,
-      user_id:      profile.id,
-      portal:       'main',
-      action:       'stage.completed',
-      table_name:   'job_stages',
-      record_id:    stage.id,
-      new_value:    { stage: stage.name, duration_minutes: mins },
-    })
-
-    toast.success(`${stage.name} marked complete`)
     setActing(null)
     fetchStages()
   }
@@ -181,12 +190,21 @@ export function TabStages({ jobId, jobStatus }) {
         <Clock size={40} className="mx-auto text-gray-200 mb-3" />
         <p className="font-semibold text-gray-500">No stages set up</p>
         <p className="text-sm text-gray-400 mt-1">
-          Stage templates may not be configured to this branch yet.
-          Go to Admin → Stage Template to set them up.
+          Go to Admin → Stage Templates to configure stages for this branch.
         </p>
       </div>
     )
   }
+
+  // SECTION: Is Final QC — second to last non-system stage
+  const nonSystemStages   = stages.filter(s => !s.system_stage)
+  const finalQCStage      = nonSystemStages[nonSystemStages.length - 1]
+
+  // SECTION: Progress
+  const doneCount  = stages.filter(s => s.status === 'complete').length
+  const totalCount = stages.filter(s => !s.system_stage).length
+  const pct        = totalCount > 0
+    ? Math.round((doneCount / totalCount) * 100) : 0
 
   // SECTION: Render
   return (
@@ -197,8 +215,7 @@ export function TabStages({ jobId, jobStatus }) {
         <div>
           <h2 className="font-semibold text-gray-800">Workshop Stages</h2>
           <p className="text-xs text-gray-400 mt-0.5">
-            {stages.filter(s => s.status === 'complete').length} of {' '}
-            {stages.filter(s => s.status !== 'skipped').length} stages complete
+            {doneCount} of {totalCount} stages complete
           </p>
         </div>
         <button
@@ -212,55 +229,61 @@ export function TabStages({ jobId, jobStatus }) {
       </div>
 
       {/* Progress Bar */}
-      <div className="w-full bg-gray-100 rounded-full h-2">
-        <div
-          className="bg-brand-600 h-2 rounded-full transition-all duration-500"
-          style={{
-            width: `${Math.round(
-              (stages.filter(s => s.status === 'complete').length /
-               Math.max(stages.filter(s => s.status !== 'skipped').length, 1)
-              ) * 100
-            )}%`
-          }}
-        />
+      <div>
+        <div className="w-full bg-gray-100 rounded-full h-2 mb-1">
+          <div
+            className="bg-brand-600 h-2 rounded-full transition-all
+                       duration-500"
+            style={{ width: `${pct}%` }}
+          />
+        </div>
+        <p className="text-xs text-gray-400 text-right">{pct}% complete</p>
       </div>
 
-      {/* Stages List */}
-      <div className="space-y-3">
+      {/* Stage List */}
+      <div className="space-y-2">
         {stages.map((stage, index) => {
+
           const config        = STATUS_CONFIG[stage.status] ?? STATUS_CONFIG.pending
           const Icon          = config.icon
           const isActing      = acting === stage.id
+          const isComplete    = stage.status === 'complete'
+          const isSkipped     = stage.status === 'skipped'
+          const isActive      = stage.status === 'active'
+          const isSystemStage = stage.system_stage
+          const isFinalQC     = stage.id === finalQCStage?.id
           const clockEvents   = clocking.filter(c => c.job_stage_id === stage.id)
           const activeEvent   = clockEvents.find(c => !c.clocked_off_at)
-          const isFirst       = index === 0
-          const prevDone      = index === 0 ||
-            ['complete','skipped'].includes(stage[index -1]?.status)
 
           return (
             <div
               key={stage.id}
               className={`card transition-all duration-200
-                          ${stage.status === 'active'
+                          ${isActive
                             ? 'border-blue-300 bg-blue-50/30 shadow-md'
-                            : stage.status === 'complete'
-                            ? 'border-green-200 bg-graan-50/20'
-                            : stage.status === 'skipped'
+                            : isComplete
+                            ? 'border-green-200 bg-green-50/20'
+                            : isSkipped
                             ? 'opacity-60'
+                            : isSystemStage
+                            ? 'border-gray-100 bg-gray-50'
                             : ''
                           }`}
             >
               <div className="flex items-start gap-4">
 
-                {/* Stage Number & Icon */}
+                {/* Stage Number + Icon */}
                 <div className="flex flex-col items-center gap-1 shrink-0">
                   <div className={`w-9 h-9 rounded-full flex items-center
                                    justify-center ${config.bg}`}>
-                    <Icon size={18} className={config.color} />
+                    {isSystemStage && !isComplete
+                      ? <Lock size={16} className="text-gray-400" />
+                      : <Icon size={18} className={config.color} />
+                    }
                   </div>
                   {index < stages.length - 1 && (
                     <div className={`w-0.5 h-4
-                                     ${stage.status === 'complete'
+                                     ${isComplete
                                        ? 'bg-green-300'
                                        : 'bg-gray-200'
                                      }`}
@@ -270,6 +293,7 @@ export function TabStages({ jobId, jobStatus }) {
 
                 {/* Stage Info */}
                 <div className="flex-1 min-w-0">
+
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="font-semibold text-gray-800 text-sm">
                       {stage.sort_order}. {stage.name}
@@ -279,6 +303,18 @@ export function TabStages({ jobId, jobStatus }) {
                                      ${config.bg} ${config.color}`}>
                       {config.label}
                     </span>
+                    {isFinalQC && !isComplete && (
+                      <span className="text-[10px] font-bold px-2 py-0.5
+                                       rounded-full uppercase tracking-wide
+                                       bg-amber-100 text-amber-700">
+                        Requires Sign-Off
+                      </span>
+                    )}
+                    {isSystemStage && (
+                      <span className="text-[10px] text-gray-400 uppercase">
+                        System
+                      </span>
+                    )}
                     {stage.duration_minutes && (
                       <span className="text-[10px] text-gray-400">
                         {fmtDuration(stage.duration_minutes)}
@@ -286,29 +322,23 @@ export function TabStages({ jobId, jobStatus }) {
                     )}
                   </div>
 
-                  {stage.description && (
-                    <p className="text-xs text-gray-500 mt-0.5">
-                      {stage.description}
-                    </p>
-                  )}
-
                   {/* Timestamps */}
                   {stage.started_at && (
                     <p className="text-[10px] text-gray-400 mt-1">
                       Started: {fmtDate(stage.started_at)}
                       {stage.completed_at && (
-                        <> • Completed: {fmtDate(stage.completed_at)}</>
+                        <> · Completed: {fmtDate(stage.completed_at)}</>
                       )}
                     </p>
                   )}
 
-                  {/* Activate technician */}
+                  {/* Active technician */}
                   {activeEvent && (
                     <div className="flex items-center gap-1.5 mt-1.5">
                       <div className="w-2 h-2 bg-green-500 rounded-full
                                       animate-pulse" />
                       <span className="text-xs text-green-700 font-medium">
-                        {activeEvent.profiles?.full_name} currently clocked on
+                        {activeEvent.profiles?.full_name} clocked on
                       </span>
                     </div>
                   )}
@@ -318,11 +348,11 @@ export function TabStages({ jobId, jobStatus }) {
                     <div className="mt-2 space-y-0.5">
                       {clockEvents.map(ev => (
                         <div key={ev.id}
-                          className="flex items-center gap-1.5 text-[10px]
-                                     text-gray-400">
+                             className="flex items-center gap-1.5
+                                        text-[10px] text-gray-400">
                           <User size={10} />
                           <span>{ev.profiles?.full_name}</span>
-                          <span>•</span>
+                          <span>·</span>
                           <span>{fmtDate(ev.clocked_on_at)}</span>
                           {ev.clocked_off_at && (
                             <>
@@ -330,7 +360,7 @@ export function TabStages({ jobId, jobStatus }) {
                               <span>{fmtDate(ev.clocked_off_at)}</span>
                               {ev.duration_minutes && (
                                 <span className="text-gray-500 font-medium">
-                                  ({dmtDuration(ev.duration_minutes)})
+                                  ({fmtDuration(ev.duration_minutes)})
                                 </span>
                               )}
                               {ev.auto_clocked_off && (
@@ -342,45 +372,79 @@ export function TabStages({ jobId, jobStatus }) {
                       ))}
                     </div>
                   )}
+
                 </div>
 
                 {/* Actions */}
                 <div className="flex items-center gap-2 shrink-0">
-                  {stage.status === 'pwnding' && prevDone && (
+
+                  {/* Final QC sign-off button — most prominent */}
+                  {isFinalQC && !isComplete && !isSkipped && (
+                    <button
+                      onClick={() => handleComplete(stage)}
+                      disabled={!!acting}
+                      className="btn-primary text-xs py-2 px-4
+                                 bg-green-600 hover:bg-green-700
+                                 flex items-center gap-1.5"
+                    >
+                      <ShieldCheck size={14} />
+                      {isActing ? '...' : 'Sign Off & Release'}
+                    </button>
+                  )}
+
+                  {/* Regular stage actions */}
+                  {!isFinalQC && !isComplete && !isSkipped && !isSystemStage && (
                     <>
-                      <button
-                        onClick={() => handleActivate(stage)}
-                        disabled={!!acting}
-                        className="btn-primary text-xs py-1.5 px-3"
-                      >
-                        {isActing ? '...' : 'Activate'}
-                      </button>
+                      {isActive && (
+                        <button
+                          onClick={() => handleComplete(stage)}
+                          disabled={!!acting}
+                          className="btn-primary text-xs py-1.5 px-3
+                                     bg-green-600 hover:bg-green-700"
+                        >
+                          {isActing ? '...' : 'Complete'}
+                        </button>
+                      )}
+                      {!isActive && (
+                        <button
+                          onClick={() => handleActivate(stage)}
+                          disabled={!!acting}
+                          className="btn-primary text-xs py-1.5 px-3"
+                        >
+                          {isActing ? '...' : 'Activate'}
+                        </button>
+                      )}
                       <button
                         onClick={() => handleSkip(stage)}
                         disabled={!!acting}
-                        className="btn-seconday text-xs py-1.5 px-3"
+                        className="btn-secondary text-xs py-1.5 px-3"
                       >
                         Skip
                       </button>
                     </>
                   )}
-                  {stage.status === 'active' && (
-                    <button
-                      onClick={() => handleComplete(stage)}
-                      disabled={!!acting}
-                      className="btn-primary text-xs py-1.5 px-3
-                                 bg-green-600 hover:bg-green-700"
-                    >
-                      {isActing ? '...' : 'Mark Complete'}
-                    </button>
-                  )}
-                </div>
 
+                </div>
               </div>
             </div>
           )
         })}
       </div>
+
+      {/* Final QC callout if not yet done */}
+      {finalQCStage && finalQCStage.status !== 'complete' && (
+        <div className="bg-amber-50 border border-amber-200 rounded-xl
+                        px-4 py-3">
+          <div className="flex items-center gap-2">
+            <ShieldCheck size={16} className="text-amber-600 shrink-0" />
+            <p className="text-sm text-amber-700 font-medium">
+              When all repairs are complete, click{' '}
+              <strong>Sign Off &amp; Release</strong> on the Final Quality
+              Check stage above to mark the vehicle as ready for collection.
+            </p>
+          </div>
+        </div>
+      )}
 
     </div>
   )

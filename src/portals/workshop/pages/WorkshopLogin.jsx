@@ -1,7 +1,7 @@
-// ===============================================
-// BODYSHOP OS - Workshop PIN Login
+// =============================================
+// BODYSHOP OS — Workshop PIN Login
 // 4-digit numeric PIN, on-screen keypad only
-// ===============================================
+// =============================================
 
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -10,14 +10,13 @@ import { setWorkshopUser } from '../WorkshopPortal'
 import { Delete, Wrench } from 'lucide-react'
 
 // SECTION: PIN Dots Display
-function PinDots({ length, filled }) {
+function PinDots({ filled }) {
   return (
     <div className="flex items-center justify-center gap-5 my-8">
       {[...Array(4)].map((_, i) => (
         <div
           key={i}
-          className={`w-5 h-5 rounded-full border-2 transition-all
-                      duration-150
+          className={`w-5 h-5 rounded-full border-2 transition-all duration-150
                       ${i < filled
                         ? 'bg-brand-500 border-brand-500 scale-110'
                         : 'bg-transparent border-gray-600'
@@ -38,8 +37,6 @@ function KeypadBtn({ label, onClick, variant = 'default' }) {
                   active:scale-95 select-none h-20
                   ${variant === 'delete'
                     ? 'bg-gray-700 hover:bg-gray-600 text-gray-300'
-                    : variant === 'enter'
-                    ? 'bg-brand-600 hover:bg-brand-500 text-white'
                     : 'bg-gray-800 hover:bg-gray-700 text-white'
                   }`}
     >
@@ -49,13 +46,12 @@ function KeypadBtn({ label, onClick, variant = 'default' }) {
 }
 
 export function WorkshopLogin() {
-  
+
   // SECTION: State
-  const [pin,       setPin]         = useState('')
-  const [error,     setError]       = useState('')
-  const [loading,   setLoading]     = useState(false)
-  const [attempts,  setAttempts]    = useState(0)
-  const [locked,    setLocked]      = useState(false)
+  const [pin,      setPin]      = useState('')
+  const [error,    setError]    = useState('')
+  const [loading,  setLoading]  = useState(false)
+  const [attempts, setAttempts] = useState(0)
 
   const navigate = useNavigate()
 
@@ -68,7 +64,7 @@ export function WorkshopLogin() {
 
   // SECTION: Keypad press
   const handleKey = (digit) => {
-    if (locked || loading) return
+    if (loading) return
     if (pin.length >= 4) return
     setError('')
     setPin(prev => prev + digit)
@@ -76,18 +72,17 @@ export function WorkshopLogin() {
 
   // SECTION: Backspace
   const handleDelete = () => {
-    if (locked || loading) return
-    setPin(prev=> prev.slice(0, -1))
+    if (loading) return
+    setPin(prev => prev.slice(0, -1))
     setError('')
   }
 
-  // Section: Login
+  // SECTION: Login — looks up profile by PIN
   const handleLogin = async (enteredPin) => {
-    if (locked || loading) return
+    if (loading) return
     setLoading(true)
     setError('')
 
-    // Look up profile by Pin
     const { data: profiles, error: fetchError } = await supabase
       .from('profiles')
       .select(`
@@ -116,110 +111,103 @@ export function WorkshopLogin() {
     if (!profile) {
       const newAttempts = attempts + 1
       setAttempts(newAttempts)
-
       if (newAttempts >= 5) {
-        setLocked(true)
-        setError('Too many failed attempts. Ask your manager to reset.')
+        setAttempts(0)
+        setError('Incorrect PIN. Please ask your manager to reset your pin.')
       } else {
-        setError(`Incorrect PIN. ${5 - mewAttempts} attempt${5 - newAttempts === 1 ? '' : 's'} remaining.`)
+        setError(
+          `Incorrect PIN. ${5 - newAttempts} attempt${
+            5 - newAttempts === 1 ? '' : 's'
+          } remaining.`
+        )
       }
-        setPin('')
-        setLoading(false)
-        return
-      }
-
-      // Store workshop user in localStorage
-      setWorkshopUser({
-        id:                 profile.id,
-        full_name:          profile.full_name,
-        role:               profile.role,
-        workshop_role_id:   profile.workshop_role_id,
-        workshop_role:      profile.workshop_roles,
-        branch_id:          profile.branch_id,
-      })
-
-      navigate('/workshop/home', { replace: true })
+      setPin('')
+      setLoading(false)
+      return
     }
 
-    // SECTION: Render
-    return (
-      <div className="min-h-screen bg-gray-900 flex flex-col
-                      items-center justify-center px-6 select-none">
+    // Store workshop session in localStorage
+    setWorkshopUser({
+      id:               profile.id,
+      full_name:        profile.full_name,
+      role:             profile.role,
+      workshop_role_id: profile.workshop_role_id,
+      workshop_role:    profile.workshop_roles,
+      branch_id:        profile.branch_id,
+    })
 
-        {/* Logo */}
-        <div className="mb-6 text-center">
-          <div className="w-16 h-16 bg-brand-600 rounded-2xl flex items-center
-                          justify-center mx-auto mb-3 shadow-xl">
-            <Wrench size={32} className="text-white" />
-          </div>
-          <h1 className="text-2xl font-black text-white tracking-wide">
-            BODYSHOP OS
-          </h1>
-          <p className="text-gray-500 text-sm mt-0.5">Workshop Portal</p>
-        </div>
-
-        {/* PIN Card */}
-        <div className="w-full max-w-xs bg-gray-800 rounded-3xl p-6
-                        shadow-2xl">
-
-          <p className="text-center text-gray-400 text-sm font-semibold
-                        uppercase tracking-wider">
-            Enter your PIN
-          </p>
-
-          {/* PIN Dots */}
-          <PinDots filled={pin.length} />
-
-          {/* Error Message */}
-          {error && (
-            <div className="bg-red-900/50 border border-red-700 rounded-xl
-                            px-4 py-2.5 mb-4 text-center">
-              <p className="text-red-400 text-sm font-medium">{error}</p>
-            </div>
-          )}
-
-          {/* Locked Message */}
-          {locked && (
-            <div className="bg-red-900/50 border border-red-700 rounded-xl
-                            px-4 py-2.5 mb-4 text-center">
-              <p className="text-red-400 text-sm font-bold">
-                Terminal locked - contact your manager
-              </p>
-            </div>
-          )}
-
-          {/* Loading */}
-          {loading && (
-            <div className="flex justify-center mb-4">
-              <div className="w-8 h-8 border-3 border-brand-500
-                              border-t-transparent rounded-full animate-spin" />
-            </div>
-          )}
-
-          {/* Numeric Keypad */}
-          <div className="grid grid-cols-3 gap-3">
-            {[1,2,3,4,5,6,7,8,9].map(n => (
-              <KeypadBtn
-                key={n}
-                label={String(n)}
-                onClick={() => handleKey(String(n))}
-              />
-            ))}
-            {/* Bottom row: Empty, 0, delete */}
-            <div />
-            <KeypadBtn label="0" onClick={() => handleKey('0')} />
-            <KeypadBtn
-              label={<Delete size={24} />}
-              onClick={handleDelete}
-              variant="delete"
-            />
-          </div>
-
-        </div>
-
-        <p className="text-gray-700 text-xs mt-8">
-          Enter your 4-digit PIN to continue
-        </p>
-      </div>
-    )
+    navigate('/workshop/home', { replace: true })
   }
+
+  // SECTION: Render
+  return (
+    <div className="min-h-screen bg-gray-900 flex flex-col
+                    items-center justify-center px-6 select-none">
+
+      {/* Logo */}
+      <div className="mb-6 text-center">
+        <div className="w-16 h-16 bg-brand-600 rounded-2xl flex items-center
+                        justify-center mx-auto mb-3 shadow-xl">
+          <Wrench size={32} className="text-white" />
+        </div>
+        <h1 className="text-2xl font-black text-white tracking-wide">
+          BODYSHOP OS
+        </h1>
+        <p className="text-gray-500 text-sm mt-0.5">Workshop Portal</p>
+      </div>
+
+      {/* PIN Card */}
+      <div className="w-full max-w-xs bg-gray-800 rounded-3xl p-6 shadow-2xl">
+
+        <p className="text-center text-gray-400 text-sm font-semibold
+                      uppercase tracking-wider">
+          Enter Your PIN
+        </p>
+
+        {/* PIN Dots */}
+        <PinDots filled={pin.length} />
+
+        {/* Error */}
+        {error && (
+          <div className="bg-red-900/50 border border-red-700 rounded-xl
+                          px-4 py-2.5 mb-4 text-center">
+            <p className="text-red-400 text-sm font-medium">{error}</p>
+          </div>
+        )}
+
+        {/* Loading spinner */}
+        {loading && (
+          <div className="flex justify-center mb-4">
+            <div className="w-8 h-8 border-2 border-brand-500
+                            border-t-transparent rounded-full animate-spin" />
+          </div>
+        )}
+
+        {/* Numeric Keypad */}
+        <div className="grid grid-cols-3 gap-3">
+          {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(n => (
+            <KeypadBtn
+              key={n}
+              label={String(n)}
+              onClick={() => handleKey(String(n))}
+            />
+          ))}
+          {/* Bottom row: blank, 0, delete */}
+          <div />
+          <KeypadBtn label="0" onClick={() => handleKey('0')} />
+          <KeypadBtn
+            label={<Delete size={24} />}
+            onClick={handleDelete}
+            variant="delete"
+          />
+        </div>
+
+      </div>
+
+      <p className="text-gray-700 text-xs mt-8">
+        Enter your 4-digit PIN to continue
+      </p>
+
+    </div>
+  )
+}

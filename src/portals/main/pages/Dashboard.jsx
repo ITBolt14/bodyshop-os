@@ -189,7 +189,7 @@ export function Dashboard() {
   // SECTION: Loading State
   if (loading) {
     return (
-      <div className="grid grid-cols-2 lg_grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {[...Array(4)].map((_, i) => (
             <div key={i} className="card h-28 bg-gray-100" />
@@ -222,12 +222,12 @@ export function Dashboard() {
       </div>
 
       {/* SECTION: Stat Cards */}
-      <div className="grid gird-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           label="Active Jobs"
           value={stats?.totalActive ?? 0}
           icon={Briefcase}
-          color="bg-brand_600"
+          color="bg-brand-600"
           sub="Currently in workshop"
           onClick={() => navigate('/main/jobs')}
         />
@@ -384,6 +384,6 @@ export function Dashboard() {
 function getGreeting() {
   const h = new Date().getHours()
   if (h < 12) return 'morning'
-  if (h > 17) return 'afternoon'
+  if (h >= 12 && h < 17) return 'afternoon'
   return 'evening'
 }

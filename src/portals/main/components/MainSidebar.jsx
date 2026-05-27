@@ -139,7 +139,7 @@ const NAV_ITEMS = [
     built:      true,
     children:   [
       { label:  'Clocking',         path: '/main/workshop/clocking',    built: false },
-      { label:  'Stage Overview',   path: '/main/workshop/monitor',      built: true },
+      { label:  'Stage Overview',   path: '/main/jobs/monitor',      built: true },
     ],
   },
   {
@@ -294,7 +294,7 @@ export function MainSideBar({ open, onToggle }) {
         {!collapsed && (
           <div className="text-center mt-1">
             <p className="text-xs font-bold text-brand-700 uppercase
-                          tracking-wider leading-right">
+                          tracking-wider leading-tight">
               BodyShop OS
             </p>
             <p className="text-xs text-gray-500 mt-0.5 truncate max-w-[180px]">

@@ -1,85 +1,116 @@
-// ===============================================
-// BODYSHOP OS - Auth Context
-// ===============================================
+// =============================================
+// BODYSHOP OS — Auth Context
+// Fixed: stable loading state, no double-fetch
+// =============================================
 
-import { createContext, useContext, useEffect, useState } from 'react'
+import { createContext, useEffect, useState, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 
-const AuthContext = createContext(null)
+export const AuthContext = createContext(null)
 
 export function AuthProvider({ children }) {
-  
+
   // SECTION: State
-  const [user,      setUser]      = useState(null)
-  const [profile,   setProfile]   = useState(null)
-  const [loading,   setLoading]   = useState(true)
-  const [authError, setAuthError] = useState(null)
+  const [user,    setUser]    = useState(null)
+  const [profile, setProfile] = useState(null)
+  const [loading, setLoading] = useState(true)
+
+  // Ref to prevent concurrent profile fetches
+  const fetchingRef = useRef(false)
 
   // SECTION: Fetch Profile
   const fetchProfile = async (userId) => {
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('*, branches(*)')
-      .eq('id', userId)
-      .single()
+    if (fetchingRef.current) return null
+    fetchingRef.current = true
 
-    if (error) {
-      console.error('Profile fetch error:', error.message)
-      return null
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*, branches(*)')
+        .eq('id', userId)
+        .single()
+
+      if (error) {
+        console.error('Profile fetch error:', error.message)
+        return null
+      }
+      return data
+    } finally {
+      fetchingRef.current = false
     }
-
-    return data
   }
 
-  // SECTION: Session Listener
+  // SECTION: Session Init + Auth Listener
   useEffect(() => {
-    // Get initial session
+    let mounted = true
+
+    // Get initial session once
     supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (!mounted) return
+
       if (session?.user) {
         setUser(session.user)
         const prof = await fetchProfile(session.user.id)
-        setProfile(prof)
+        if (mounted) setProfile(prof)
       }
-      setLoading(false)
+
+      if (mounted) setLoading(false)
     })
 
-    // Listen for auth state changes
+    // Listen for auth changes — only act on SIGNED_IN, SIGNED_OUT
+    // Ignore TOKEN_REFRESHED and other noise events
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        if (session?.user) {
+        if (!mounted) return
+
+        if (event === 'SIGNED_OUT') {
+          setUser(null)
+          setProfile(null)
+          return
+        }
+
+        if (event === 'SIGNED_IN' && session?.user) {
           setUser(session.user)
           const prof = await fetchProfile(session.user.id)
-          setProfile(prof)
+          if (mounted) {
+            setProfile(prof)
 
-          // Update last_login on sign in
-          if (event === 'SIGNED IN') {
-            await supabase
+            // Update last login timestamp
+            supabase
               .from('profiles')
               .update({ last_login: new Date().toISOString() })
               .eq('id', session.user.id)
+              .then(() => {})
           }
-        } else {
-          setUser(null)
-          setProfile(null)
+          return
         }
-        setLoading(false)
+
+        if (event === 'PASSWORD_RECOVERY' && session?.user) {
+          setUser(session.user)
+          return
+        }
+
+        // TOKEN_REFRESHED — update user token silently, no profile refetch
+        if (event === 'TOKEN_REFRESHED' && session?.user) {
+          setUser(session.user)
+          return
+        }
       }
     )
 
-    return () => subscription.unsubscribe()
+    return () => {
+      mounted = false
+      subscription.unsubscribe()
+    }
   }, [])
 
   // SECTION: Auth Methods
   const signIn = async (email, password) => {
-    setAuthError(null)
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     })
-    if (error) {
-      setAuthError(error.message)
-      return { error }
-    }
+    if (error) return { error }
     return { data }
   }
 
@@ -90,39 +121,36 @@ export function AuthProvider({ children }) {
   }
 
   const resetPassword = async (email) => {
-    const { error } =await supabase.auth.resetPasswordForEmail(email, {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: `${window.location.origin}/update-password`,
     })
     return { error }
   }
 
   const updatePassword = async (newPassword) => {
-    const { error } = await supabase.auth.updateUser({
-      password: newPassword,
-    })
+    const { error } = await supabase.auth.updateUser({ password: newPassword })
     return { error }
   }
 
   // SECTION: Role Helpers
-  const hasRole     = (role)    => profile?.role === role
-  const hasAnyRole  = (roles)   => roles.includes(profile?.role)
-  const isActive    = ()        => profile?.active === true
+  const hasRole    = (role)  => profile?.role === role
+  const hasAnyRole = (roles) => roles.includes(profile?.role)
+  const isActive   = ()      => profile?.active === true
 
-  const isSuperAdmin    = () => hasRole('super_admin')
-  const isBranchAdmin   = () => hasAnyRole(['super_admin', 'branch_admin'])
-  const isStaff         = () => hasAnyRole([
+  const isSuperAdmin  = () => hasRole('super_admin')
+  const isBranchAdmin = () => hasAnyRole(['super_admin', 'branch_admin'])
+  const isStaff       = () => hasAnyRole([
     'super_admin', 'branch_admin', 'manager',
-    'estimator', 'technician', 'receptionist'
+    'estimator', 'technician', 'receptionist',
   ])
-  const isAssessor      = () => hasRole('assessor')
-  const isCustomer      = () => hasRole('customer')
+  const isAssessor = () => hasRole('assessor')
+  const isCustomer = () => hasRole('customer')
 
   // SECTION: Context Value
   const value = {
     user,
     profile,
     loading,
-    authError,
     signIn,
     signOut,
     resetPassword,
@@ -142,12 +170,4 @@ export function AuthProvider({ children }) {
       {children}
     </AuthContext.Provider>
   )
-}
-
-export function useAuthContext() {
-  const context = useContext(AuthContext)
-  if (!context) {
-    throw new Error('useAuthContext must be used inside AuthProvider')
-  }
-  return context
 }

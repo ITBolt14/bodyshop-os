@@ -82,7 +82,7 @@ export function MainTopBar({ onMenuToggle }) {
         >
           <Bell size={20} />
           {/* Unread badge - wired up in Phase 2B */}
-          <span className="asbolute top-1 right-1 w-2 h-2 bg-red-500
+          <span className="absolute top-1 right-1 w-2 h-2 bg-red-500
                            rounded-full" />
         </button>
 

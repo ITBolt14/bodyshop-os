@@ -232,7 +232,7 @@ export function JobList() {
       ...job,
       vehicle: vehicleMap[job.vehicle_id] || null,
       claim:   claimMap[job.id]           || null,
-      insurer: insurers.find(i => i.id === job.insurer_id) || null,
+      insurer_id: job.insurer_id,
     }))
 
     setJobs(merged)
@@ -241,7 +241,7 @@ export function JobList() {
   }, [
     branchId, filterStatus, filterType, filterPriority,
     filterInsurer, dateFrom, dateTo, sortField, sortDir,
-    page, insurers
+    page
   ])
 
   useEffect(() => {
@@ -277,7 +277,6 @@ export function JobList() {
   // SECTION: Clear Filters
   const clearFilters = () => {
     setFilterStatus('')
-    setFilterType('')
     setFilterType('')
     setFilterPriority('')
     setFilterInsurer('')
@@ -568,7 +567,7 @@ export function JobList() {
                     {/* Insurer */}
                     <td className="px-4 py-3">
                       <p className="text-xs text-gray-700">
-                        {job.insurer?.name ?? '-'}
+                        {insurers.find(i => i.id === job.insurer_id)?.name ?? '-'}
                       </p>
                     </td>
 
@@ -643,7 +642,7 @@ export function JobList() {
         {/* SECTION: Pagination */}
         {totalPages > 1 && (
           <div className="flex items-center justify-between px-4 py-3
-                          border-r border-gray-100">
+                          border-t border-gray-100">
             <p className="text-xs text-gray-500">
               Showing {page * PAGE_SIZE + 1}-
               {Math.min((page + 1) * PAGE_SIZE, totalCount)} of {totalCount}
