@@ -4,7 +4,7 @@
 
 import { useState } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
-import { MainSideBar } from './components/MainSideBar'
+import { MainSidebar } from './components/MainSidebar'
 import { MainTopBar } from './components/MainTopBar'
 import { Dashboard } from './pages/Dashboard'
 import { CheckInWizard } from './pages/jobs/checkin/CheckInWizard'
@@ -39,7 +39,7 @@ export function MainPortal() {
     <div className="flex h-screen bg-gray-50 overflow-hidden">
 
       {/* Sidebar */}
-      <MainSideBar
+      <MainSidebar
         open={sidebarOpen}
         onToggle={() => setSidebarOpen(prev => !prev)}
       />
