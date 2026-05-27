@@ -259,7 +259,7 @@ function NavItem({ item, collapsed }) {
 }
 
 // SECTION: Main Sidebar Component
-export function MainSideBar({ open, onToggle }) {
+export function MainSidebar({ open, onToggle }) {
   const { profile }     = useAuth()
   const { branchName }  = useBranch()
   const collapsed       = !open
